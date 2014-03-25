@@ -1,0 +1,17 @@
+#set ($path = "${out}${hlp.packageToPath($pkg)}${ont.ClsName}Factory.java")
+#if (! $skipHeader)
+package $pkg;
+#end
+
+public class ${ont.clsName}Factory {
+
+    #foreach ($cls in $ont.classes)
+        #if (! $hlp.isBasicClass($cls))
+
+    public static ${cls.clsName} create${cls.clsName}() {
+        return new ${cls.clsName}Impl();
+    }
+        #end
+    #end
+
+}

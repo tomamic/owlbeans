@@ -1,0 +1,82 @@
+#set ($hlp.conv = $hlp.createMap("boolean:boolean,float:double,decimal:double,double:double,int:int,positiveInteger:int,negativeInteger:int,nonPositiveInteger:int,nonNegativeInteger:int,long:int,integer:int,short:int,byte:int,unsignedLong:int,unsignedInteger:int,unsignedShort:int,unsignedByte:int,string:string,anyURI:string,normalizedString:string,token:string,language:string,date:date,dateTime:date,duration:date,time:date,AID:aid,AgentIdentifier:aid,AgentAction:agentAction,Concept:concept,Predicate:predicate"))
+#set ($hlp.defaultParent = "Concept")
+
+#set ($ontClsName = "${ont.clsName}")
+#if (! $ont.clsName.toLowerCase().endsWith("ontology")) #set ($ontClsName = "${ontClsName}Ontology")#end
+
+#set ($path = "${out}${hlp.packageToPath($pkg)}${ontClsName}.java")
+
+#if (! $skipHeader)
+package $pkg;
+#end
+
+public class ${ontClsName} extends jade.content.onto.Ontology {
+    public static final String ONTOLOGY_NAME = "$ont.name";
+
+    // The singleton instance of this ontology
+    private static jade.content.onto.Ontology theInstance = new ${ontClsName}();
+    public static jade.content.onto.Ontology getInstance() { return theInstance; }
+
+    // Vocabulary
+    #foreach ($cls in $ont.classes)
+        #if (! $hlp.isBasicClass($cls))
+
+    public static final String $cls.cstName = "$cls.name";
+            #foreach ($prop in $cls.properties)
+
+    public static final String ${cls.cstName}_${prop.cstName} = "$prop.name";
+            #end
+        #end
+    #end
+
+    public void addSlot(jade.content.schema.ConceptSchema schema, String slot, jade.content.schema.TermSchema type, int minCard, int maxCard) {
+        int optionality = (minCard > 0) ? jade.content.schema.ObjectSchema.MANDATORY : jade.content.schema.ObjectSchema.OPTIONAL;
+        if (maxCard == 1) schema.add(slot, type, optionality);
+        else schema.add(slot, type, minCard, maxCard);
+    }
+
+    public void addSlot(jade.content.schema.PredicateSchema schema, String slot, jade.content.schema.TermSchema type, int minCard, int maxCard) {
+        int optionality = (minCard > 0) ? jade.content.schema.ObjectSchema.MANDATORY : jade.content.schema.ObjectSchema.OPTIONAL;
+        if (maxCard == 1) schema.add(slot, type, optionality);
+        else schema.add(slot, type, minCard, maxCard);
+    }
+
+    public ${ontClsName}() {
+        super(ONTOLOGY_NAME, jade.content.onto.BasicOntology.getInstance());
+
+        try {
+            jade.content.schema.PrimitiveSchema stringSchema = (jade.content.schema.PrimitiveSchema)getSchema(jade.content.onto.BasicOntology.STRING);
+            jade.content.schema.PrimitiveSchema floatSchema = (jade.content.schema.PrimitiveSchema)getSchema(jade.content.onto.BasicOntology.FLOAT);
+            jade.content.schema.PrimitiveSchema intSchema = (jade.content.schema.PrimitiveSchema)getSchema(jade.content.onto.BasicOntology.INTEGER);
+            jade.content.schema.PrimitiveSchema booleanSchema = (jade.content.schema.PrimitiveSchema)getSchema(jade.content.onto.BasicOntology.BOOLEAN);
+            jade.content.schema.PrimitiveSchema dateSchema = (jade.content.schema.PrimitiveSchema)getSchema(jade.content.onto.BasicOntology.DATE);
+            jade.content.schema.ConceptSchema aidSchema = (jade.content.schema.ConceptSchema)getSchema(jade.content.onto.BasicOntology.AID);
+
+            // Adding schemas
+    #foreach ($cls in ${ont.classes}) #if (! $hlp.isBasicClass($cls))
+        #set ($basic = $hlp.getBasicClass($cls, $ont))
+
+            jade.content.schema.${basic.clsName}Schema ${cls.objName}Schema = new jade.content.schema.${basic.clsName}Schema($cls.cstName);
+            add(${cls.objName}Schema, Class.forName("$pkg.${cls.clsName}Impl"));
+    #end #end
+
+            // Adding properties
+    #foreach ($cls in $ont.classes) #if (! $hlp.isBasicClass($cls))
+        #foreach ($prop in $cls.properties)
+            #set ($rangeObjName = $hlp.convertObjName(${prop.range}))
+
+            addSlot(${cls.objName}Schema, ${cls.cstName}_${prop.cstName}, ${rangeObjName}Schema, $prop.minCardinality, $prop.MaxCardinality);
+        #end
+    #end #end
+
+            // Adding parents
+    #foreach ($cls in $ont.classes) #if (! $hlp.isBasicClass($cls))
+        #foreach ($parent in $cls.parents) #if (! $hlp.isBasicClass($parent))
+
+            ${cls.objName}Schema.addSuperSchema(${parent.objName}Schema);
+        #end #end
+    #end #end
+
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+}

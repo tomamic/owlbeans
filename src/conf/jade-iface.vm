@@ -1,0 +1,28 @@
+#set ($hlp.conv = $hlp.createMap("boolean:boolean,float:double,decimal:double,double:double,int:int,positiveInteger:int,negativeInteger:int,nonPositiveInteger:int,nonNegativeInteger:int,long:int,integer:int,short:int,byte:int,unsignedLong:int,unsignedInteger:int,unsignedShort:int,unsignedByte:int,string:String,anyURI:String,normalizedString:String,token:String,language:String,date:java.util.Date,dateTime:java.util.Date,duration:java.util.Date,time:java.util.Date,AID:jade.core.AID,AgentIdentifier:jade.core.AID,AgentAction:jade.content.AgentAction,Concept:jade.content.Concept,Predicate:jade.content.Predicate"))
+#set ($hlp.defaultParent = "Concept")
+#if (! $hlp.isBasicClass($cls))
+
+#set ($path = "${out}${hlp.packageToPath($pkg)}${cls.clsName}.java")
+
+#foreach ($parent in $cls.parents)
+	#set ($parentClsName = $hlp.convertClsName($parent))
+	#if ($velocityCount == 1) #set ($extendList = "extends $parentClsName")
+	#else #set ($extendList = "$extendList, $parentClsName") #end
+#end
+
+#if (! $skipHeader)
+package $pkg;
+#end
+
+public interface $cls.clsName $!extendList {
+
+	#foreach ($prop in $cls.properties)
+		#if ($prop.maxCardinality == 1) #set ($range = $hlp.convertClsName($prop.range))
+		#else	#set ($range = "jade.util.leap.List") #end
+
+		public $range get${prop.clsName}();
+		public void set${prop.clsName}($range $prop.objName);
+	#end
+
+}
+#end

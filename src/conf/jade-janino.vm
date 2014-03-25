@@ -1,0 +1,14 @@
+package $pkg;
+#set ($skipHeader = true)
+
+#foreach ($cls in $ont.classes)
+	#parse ("conf/jade-iface.vm")
+#end
+
+#foreach ($cls in $ont.classes)
+	#parse ("conf/jade-class.vm")
+#end
+
+#parse ("conf/jade-onto.vm")
+
+#set ($path = "${out}janino.txt")
